@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+	<schema id="regulus" path="/regulus/">
+		<key name="dark-mode" type="b">
+			<default>false</default>
+			<summary>Use the dark color scheme</summary>
+			<description>Whether Regulus uses the dark variant of the color scheme.</description>
+		</key>
+
+		<key name="onboarding-done" type="b">
+			<default>false</default>
+			<summary>Onboarding completed</summary>
+			<description>Whether the first-run welcome screen has been completed.</description>
+		</key>
+	</schema>
+</schemalist>

@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<gresources>
+  <gresource prefix="/regulus/js">
+    <file>main.js</file>
+    <file>cli.js</file>
+    <file>app/application.js</file>
+    <file>app/config.js</file>
+    <file>app/settings.js</file>
+    <file>core/engine.js</file>
+    <file>core/launchers.js</file>
+    <file>core/net.js</file>
+    <file>core/profiles.js</file>
+    <file>core/runtime.js</file>
+    <file>features/apps/discovery.js</file>
+    <file>features/setup/requirements.js</file>
+    <file>features/vm/dockur.js</file>
+    <file>features/vm/freerdp.js</file>
+    <file>features/vm/vm_controller.js</file>
+    <file>models/vm.js</file>
+    <file>ui/about-dialog.js</file>
+    <file>ui/apps_page.js</file>
+    <file>ui/preferences.js</file>
+    <file>ui/setup_window.js</file>
+    <file>ui/shortcuts-dialog.js</file>
+    <file>ui/vm_overview.js</file>
+    <file>ui/window.js</file>
+  </gresource>
+</gresources>

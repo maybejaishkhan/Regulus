@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.regulus.Regulus
+Exec=@bindir@/regulus --gapplication-service

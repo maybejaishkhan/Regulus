@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Regulus
+Comment=Run Windows apps on Linux with Docker
+Exec=regulus
+Icon=regulus
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=windows;docker;vm;remoteapp;
+StartupNotify=true
+DBusActivatable=true

@@ -1,0 +1,163 @@
+name: Package (distro containers)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  # manual trigger for testing the pipeline before the first tag
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to publish the GitHub Release
+
+jobs:
+  deb:
+    name: .deb (Debian container)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          # Tag push -> "1.0.0" from "v1.0.0"; manual runs fall back to the
+          # project version in meson.build so they still produce valid packages.
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build inside a Debian container
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            -e VERSION="${{ steps.version.outputs.version }}" \
+            debian:trixie bash .github/scripts/build-deb.sh
+
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: regulus-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+  rpm:
+    name: .rpm (Fedora container)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build inside a Fedora container
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            -e VERSION="${{ steps.version.outputs.version }}" \
+            fedora:latest bash .github/scripts/build-rpm.sh
+
+      - name: Upload .rpm
+        uses: actions/upload-artifact@v4
+        with:
+          name: regulus-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+
+  archlinux:
+    name: .pkg.tar.zst (Arch Linux container)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build inside an Arch Linux container
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            -e VERSION="${{ steps.version.outputs.version }}" \
+            archlinux:latest bash .github/scripts/build-arch.sh
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: regulus-arch
+          path: dist/*.pkg.tar.zst
+          if-no-files-found: error
+
+  appimage:
+    name: .AppImage (bundle, Debian container)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build inside a Debian container
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            -e VERSION="${{ steps.version.outputs.version }}" \
+            debian:trixie bash .github/scripts/build-appimage.sh
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: regulus-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: Attach packages to the GitHub release
+    needs: [deb, rpm, archlinux, appimage]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collect packages
+        uses: actions/download-artifact@v4
+        with:
+          name: regulus-deb
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: regulus-rpm
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: regulus-arch
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: regulus-appimage
+          path: dist
+
+      - name: Inspect
+        run: ls -lh dist/
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

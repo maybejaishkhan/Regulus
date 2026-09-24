@@ -1,0 +1,28 @@
+Source: regulus
+Section: utils
+Priority: optional
+Maintainer: Jaish Khan <maybejaishkhan@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               meson (>= 1.0.0),
+               libgtk-4-dev (>= 4.4),
+               libadwaita-1-dev (>= 1.4),
+               gsettings-desktop-schemas-dev,
+               desktop-file-utils,
+               appstream,
+               gjs
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/maybejaishkhan/Regulus
+
+Package: regulus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, gjs (>= 1.72)
+Recommends: docker.io, freerdp3-sdl
+Description: run Windows apps on your Linux desktop
+ Regulus manages Windows virtual machines backed by the dockurr/windows
+ container image and streams individual Windows applications to the
+ desktop with the SDL FreeRDP client (RemoteApp).
+ .
+ It creates and starts VMs, reports host prerequisites with distro-aware
+ fix-up commands, discovers applications installed inside Windows, and
+ generates host .desktop launchers that open them directly.

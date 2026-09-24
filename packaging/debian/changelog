@@ -1,0 +1,6 @@
+regulus (1.0.0) unstable; urgency=medium
+
+  * First packaged release: full VM onboarding wizard with distro-aware
+    prerequisite fixes, VM adoption, split-view shell and native packaging.
+
+ -- Jaish Khan <maybejaishkhan@users.noreply.github.com>  Wed, 23 Sep 2026 12:00:00 +0000

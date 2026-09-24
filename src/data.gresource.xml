@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<gresources>
+  <gresource prefix="/regulus">
+    <file preprocess="xml-stripblanks" alias="window.ui">../src/ui/window.ui</file>
+    <file preprocess="xml-stripblanks" alias="shortcuts-dialog.ui">../src/ui/shortcuts-dialog.ui</file>
+  </gresource>
+</gresources>
