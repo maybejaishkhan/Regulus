@@ -4,16 +4,24 @@ on:
   push:
     tags:
       - 'v*'
-  # manual trigger for testing the pipeline before the first tag
+  # manual trigger for testing the pipeline before the first tag; the version
+  # is taken from `version` below (falling back to meson.build when empty)
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (defaults to the version in meson.build)'
+        required: false
+        default: ''
 
 permissions:
   contents: write # needed to publish the GitHub Release
 
 jobs:
-  deb:
-    name: .deb (Debian container)
+  # Resolve the version once at the top; every packaging job reuses its id.
+  resolve-version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,18 +29,29 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          # Tag push -> "1.0.0" from "v1.0.0"; manual runs fall back to the
-          # project version in meson.build so they still produce valid packages.
+          # Tag push -> "1.0.0" from "v1.0.0"; workflow_dispatch can supply
+          # one via the `version` input; final fallback is meson.build.
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
             echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ inputs.version }}" ]; then
+            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
             echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
           fi
+          echo "resolved version: ${{ steps.version.outputs.value }}"
+
+  deb:
+    name: .deb (Debian container)
+    needs: resolve-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Build inside a Debian container
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
-            -e VERSION="${{ steps.version.outputs.version }}" \
+            -e VERSION="${{ needs.resolve-version.outputs.version }}" \
             debian:trixie bash .github/scripts/build-deb.sh
 
       - name: Upload .deb
@@ -44,24 +63,16 @@ jobs:
 
   rpm:
     name: .rpm (Fedora container)
+    needs: resolve-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve version
-        id: version
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build inside a Fedora container
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
-            -e VERSION="${{ steps.version.outputs.version }}" \
+            -e VERSION="${{ needs.resolve-version.outputs.version }}" \
             fedora:latest bash .github/scripts/build-rpm.sh
 
       - name: Upload .rpm
@@ -73,24 +84,16 @@ jobs:
 
   archlinux:
     name: .pkg.tar.zst (Arch Linux container)
+    needs: resolve-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve version
-        id: version
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build inside an Arch Linux container
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
-            -e VERSION="${{ steps.version.outputs.version }}" \
+            -e VERSION="${{ needs.resolve-version.outputs.version }}" \
             archlinux:latest bash .github/scripts/build-arch.sh
 
       - name: Upload Arch package
@@ -102,24 +105,16 @@ jobs:
 
   appimage:
     name: .AppImage (bundle, Debian container)
+    needs: resolve-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve version
-        id: version
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build inside a Debian container
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
-            -e VERSION="${{ steps.version.outputs.version }}" \
+            -e VERSION="${{ needs.resolve-version.outputs.version }}" \
             debian:trixie bash .github/scripts/build-appimage.sh
 
       - name: Upload AppImage

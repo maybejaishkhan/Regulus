@@ -4,14 +4,20 @@ set -euo pipefail
 # Build a .deb inside a Debian container using the native dpkg-buildpackage
 # toolchain (packaging/debian tree). Invoked by CI (and usable locally) as:
 #
-#   docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
-#     debian:trixie bash .github/scripts/build-deb.sh
+#   docker run --rm -v "$PWD:/src" -w /src \
+#     [-e VERSION=1.0.0] debian:trixie bash .github/scripts/build-deb.sh
 #
 # The workspace is bind-mounted read/write as /src and is only used for the
 # source tree and the final dist/ output. Everything else happens in /tmp, so
 # the working tree stays pristine.
 
-: "${VERSION:?VERSION must be set}"
+# Version: usually provided by CI from a tag or the workflow_dispatch input.
+# When absent (e.g. plain local runs), fall back to meson.build so the scripts
+# are usable without any environment/CI setup.
+if [ -z "${VERSION:-}" ]; then
+  VERSION="$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)"
+fi
+: "${VERSION:?unable to determine a version (pass VERSION or set it in meson.build)}"
 
 export DEBIAN_FRONTEND=noninteractive
 

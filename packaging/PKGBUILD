@@ -1,5 +1,7 @@
 pkgname=regulus
-pkgver=1.0.0
+# pkgver is stamped into this staged copy by .github/scripts/build-arch.sh
+# (from the CI tag / workflow_dispatch input / meson.build).
+pkgver=sTAMPED_bY_cI # placeholder — build script replaces this line
 pkgrel=1
 pkgdesc='Run Windows apps on your Linux desktop (dockur/windows VMs + FreeRDP RemoteApp)'
 arch=('x86_64')

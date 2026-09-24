@@ -4,8 +4,8 @@ set -euo pipefail
 # Build a self-contained AppImage inside a Debian container.
 # Invoked by CI (and usable locally) as:
 #
-#   docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
-#     debian:trixie bash .github/scripts/build-appimage.sh
+#   docker run --rm -v "$PWD:/src" -w /src \
+#     [-e VERSION=1.0.0] debian:trixie bash .github/scripts/build-appimage.sh
 #
 # Regulus is a GJS app whose "binary" is a shebang script, so besides the
 # bundled GTK/Adwaita stack the AppImage also ships gjs itself and a patched,
@@ -15,7 +15,13 @@ set -euo pipefail
 # /tmp (scratch tree, meson build dir, AppDir, tool binaries) and only the
 # final AppImage is written to /src/dist, so the working tree stays pristine.
 
-: "${VERSION:?VERSION must be set}"
+# Version: usually provided by CI from a tag or the workflow_dispatch input.
+# When absent (e.g. plain local runs), fall back to meson.build so the scripts
+# are usable without any environment/CI setup.
+if [ -z "${VERSION:-}" ]; then
+  VERSION="$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)"
+fi
+: "${VERSION:?unable to determine a version (pass VERSION or set it in meson.build)}"
 
 # Retry helper — the GitHub release CDN is occasionally flaky.
 dl() {

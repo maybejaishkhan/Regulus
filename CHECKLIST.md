@@ -66,6 +66,19 @@ history) and the finer details live in [`README.md`](README.md).
   freerdp`, Arch `depends`/`optdepends`; AppImage bundles its runtime).
   Locally validated end-to-end with the exact `docker run` invocations the
   workflow uses.
+  - **Manual test runs** — `workflow_dispatch` now takes a `version` input
+    (defaults to `meson.build`), and a top-level `resolve-version` job pins it
+    once for all four containers, so the pipeline is testable before the first
+    tag.
+  - **No more static pins** — the `VERSION must be set` failures are gone: each
+    script derives the version from `meson.build` when `VERSION` isn't passed,
+    and `packaging/PKGBUILD` / `regulus.spec` keep placeholders that the build
+    scripts stamp (tag / dispatch input / meson.build). RPM changelog entry is
+    stamped too.
+  - **Arch package stays `.pkg.tar.zst`** — `.tzst` was considered but makepkg
+    (7.1.0) refuses to produce it (config lint requires a `.pkg.tar*` suffix),
+    so the package is the standard `.pkg.tar.zst`. Validated in the
+    `archlinux:latest` container.
 
 ## ✅ Done
 

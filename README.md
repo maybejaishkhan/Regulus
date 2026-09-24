@@ -57,6 +57,11 @@ sudo meson install -C build
 Packages are built **natively inside each distro's own container**: the
 [`packaging/debian/`](packaging/debian) tree with `dpkg-buildpackage`, [`packaging/regulus.spec`](packaging/regulus.spec)
 with `rpmbuild`, and [`packaging/PKGBUILD`](packaging/PKGBUILD) with `makepkg`.
+
+To **test the pipeline before the first tag**: run the workflow manually from
+the GitHub UI (*Actions → Package (distro containers) → Run workflow*), pass a
+`version` if you want to test one, and leave it empty to use the version in
+`meson.build`.
 The AppImage is bundled with linuxdeploy + the GTK plugin (which also ships
 `gjs` and a relocatable launcher). Pushing a `v*` tag runs
 `.github/workflows/release.yml`, which spins up the four containers in
@@ -80,18 +85,22 @@ self-contained (own GTK/Adwaita/gjs runtime) and runs on any 2024+ distro;
 Docker and a FreeRDP client still need to be installed on the host as with the
 distro packages.
 
-Build all four locally the same way the pipeline does (only needs Docker):
+Build all four locally the same way the pipeline does (only needs Docker).
+`VERSION` is optional — omit it and the scripts take the version from
+`meson.build`:
 
 ```sh
-docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
+docker run --rm -v "$PWD:/src" -w /src \
   debian:trixie bash .github/scripts/build-deb.sh
-docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
+docker run --rm -v "$PWD:/src" -w /src \
   fedora:latest bash .github/scripts/build-rpm.sh
-docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
+docker run --rm -v "$PWD:/src" -w /src \
   archlinux:latest bash .github/scripts/build-arch.sh
-docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
+docker run --rm -v "$PWD:/src" -w /src \
   debian:trixie bash .github/scripts/build-appimage.sh
 ```
+
+For a specific version (e.g. testing a release candidate): `-e VERSION=2.0.0`.
 
 The containers only read the working tree and write the packages into `dist/`
 (staging builds happen in `/tmp` inside the container), so nothing in your

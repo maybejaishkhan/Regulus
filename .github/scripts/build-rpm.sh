@@ -4,14 +4,24 @@ set -euo pipefail
 # Build an .rpm inside a Fedora container using the native rpmbuild toolchain
 # (packaging/regulus.spec). Invoked by CI (and usable locally) as:
 #
-#   docker run --rm -v "$PWD:/src" -w /src -e VERSION=1.0.0 \
-#     fedora:latest bash .github/scripts/build-rpm.sh
+#   docker run --rm -v "$PWD:/src" -w /src \
+#     [-e VERSION=1.0.0] fedora:latest bash .github/scripts/build-rpm.sh
 #
 # The workspace is bind-mounted read/write as /src and is only used for the
 # source tree and the final dist/ output. Everything else happens in /tmp, so
 # the working tree stays pristine.
 
-: "${VERSION:?VERSION must be set}"
+# Version: usually provided by CI from a tag or the workflow_dispatch input.
+# When absent (e.g. plain local runs), fall back to meson.build so the scripts
+# are usable without any environment/CI setup.
+if [ -z "${VERSION:-}" ]; then
+  VERSION="$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -1)"
+fi
+: "${VERSION:?unable to determine a version (pass VERSION or set it in meson.build)}"
+
+# Keep the spec's changelog entry in sync with the version being built.
+LOGIN="$(id -un)"
+EMAIL="$(id -un)@localhost"
 
 dnf -y --setopt=install_weak_deps=False install \
   rpm-build meson ninja-build gjs \
@@ -33,6 +43,10 @@ tar -cJf "$RPMTOP/SOURCES/regulus-$VERSION.tar.xz" -C /tmp/src-tree "regulus-$VE
 # The spec pins a version; stamp the tag version into the staged copy only.
 sed -i "s/^Version:.*/Version:        ${VERSION}/" "$SRC_TREE/packaging/regulus.spec"
 grep -m1 '^Version:' "$SRC_TREE/packaging/regulus.spec"
+
+sed -i "/^- .* - [0-9].*-1$/s/- [0-9][^ ]* -1/- ${VERSION}-1/" "$SRC_TREE/packaging/regulus.spec"
+sed -i "/^- .* - ${VERSION}-1$/s/^- \*/& $(date +'%a %b %d %Y') ${LOGIN} <${EMAIL}> /" "$SRC_TREE/packaging/regulus.spec"
+grep -m1 '^- .* - ' "$SRC_TREE/packaging/regulus.spec"
 
 rpmbuild --define "_topdir $RPMTOP" -ba "$SRC_TREE/packaging/regulus.spec"
 

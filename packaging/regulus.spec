@@ -1,5 +1,7 @@
 Name:           regulus
-Version:        1.0.0
+# Version is stamped into the staged copy by .github/scripts/build-rpm.sh
+# (from the CI tag / workflow_dispatch input / meson.build).
+Version:        sTAMPED_bY_cI # placeholder — build script replaces this line
 Release:        1%{?dist}
 Summary:        Run Windows apps on your Linux desktop
 
@@ -52,5 +54,8 @@ launchers that open them directly.
 %{_datadir}/icons/hicolor/*/*/regulus*.svg
 
 %changelog
-* Wed Sep 23 2026 Jaish Khan <maybejaishkhan@users.noreply.github.com> - 1.0.0-1
-- First packaged release
+# Changelog entries below are stamped by .github/scripts/build-rpm.sh
+# (date + identity + version) into the staged copy.
+
+* Tue Jan  1 2030 Toolchain <toolchain@localhost> - 0-1
+- Placeholder entry — replaced at build time
