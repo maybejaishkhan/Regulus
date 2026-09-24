@@ -1,4 +1,4 @@
-# Regulus
+# Regulus v1.0.0
 
 > A **GTK 4 + GJS** (GNOME JavaScript) app for running real Windows apps on
 > Linux: the Windows VM lives in a Docker container (via
