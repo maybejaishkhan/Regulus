@@ -44,9 +44,12 @@ tar -cJf "$RPMTOP/SOURCES/regulus-$VERSION.tar.xz" -C /tmp/src-tree "regulus-$VE
 sed -i "s/^Version:.*/Version:        ${VERSION}/" "$SRC_TREE/packaging/regulus.spec"
 grep -m1 '^Version:' "$SRC_TREE/packaging/regulus.spec"
 
-sed -i "/^- .* - [0-9].*-1$/s/- [0-9][^ ]* -1/- ${VERSION}-1/" "$SRC_TREE/packaging/regulus.spec"
-sed -i "/^- .* - ${VERSION}-1$/s/^- \*/& $(date +'%a %b %d %Y') ${LOGIN} <${EMAIL}> /" "$SRC_TREE/packaging/regulus.spec"
-grep -m1 '^- .* - ' "$SRC_TREE/packaging/regulus.spec"
+# Stamp the top %changelog entry in place: current build date, identity and
+# resolved version, e.g. "* Thu Sep 24 2026 root <root@localhost> - 1.0.0-1".
+STAMP="* $(date +'%a %b %d %Y') ${LOGIN} <${EMAIL}> - ${VERSION}-1"
+sed -i -E "s/^(\* [^-]+) - [0-9][^ ]*-1$/${STAMP}/" \
+  "$SRC_TREE/packaging/regulus.spec"
+grep -m1 '^\* ' "$SRC_TREE/packaging/regulus.spec"
 
 rpmbuild --define "_topdir $RPMTOP" -ba "$SRC_TREE/packaging/regulus.spec"
 

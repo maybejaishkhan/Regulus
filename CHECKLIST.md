@@ -75,6 +75,12 @@ history) and the finer details live in [`README.md`](README.md).
     and `packaging/PKGBUILD` / `regulus.spec` keep placeholders that the build
     scripts stamp (tag / dispatch input / meson.build). RPM changelog entry is
     stamped too.
+  - **Fedora stamping fixed** — the rpm script's changelog seds/grep matched
+    `^- ...` but the spec's `%changelog` lines start with `*`, so the script
+    aborted after stamping only `Version:` (the workflow's "everyone passed
+    except fedora" failure). Rewritten to stamp the entry with the current
+    build date, identity and version in one `sed -E` — Fedora build now green,
+    verified in `fedora:latest`.
   - **Arch package stays `.pkg.tar.zst`** — `.tzst` was considered but makepkg
     (7.1.0) refuses to produce it (config lint requires a `.pkg.tar*` suffix),
     so the package is the standard `.pkg.tar.zst`. Validated in the
